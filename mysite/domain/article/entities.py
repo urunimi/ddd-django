@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 
 
 @dataclass
@@ -12,3 +13,5 @@ class Article:
     title: str
     description: str
     image: Image
+
+    updated_at: datetime

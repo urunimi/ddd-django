@@ -60,11 +60,9 @@ class ArticleRepo(article.Repo):
 
         if last_id:
             last_article = models.Article.objects.get(pk=last_id)
-            qs = qs.filter(order__gte=last_article.order, id_gt=last_article.id)
+            qs = qs.filter(id_gt=last_article.id)
 
-        qs.order_by('order')
-        result = qs.sql_calc_found_rows()[:limit]
-
+        result = qs[:limit]
         articles = [self._mapper.to_article_entity(m) for m in result]
 
-        return articles, len(articles) == result.found_rows
+        return articles, len(result) < limit

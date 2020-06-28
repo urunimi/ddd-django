@@ -78,7 +78,5 @@ class TestArticleRepo(TransactionTestCase):
             self.assertEqual(article.id in db_ids, True)
 
     def _assert_equal_article(self, article: Article, db_article: DbArticle):
-        self.assertEqual(db_article.name, article.name)
-        self.assertEqual(db_article.opened_at, article.opened_at)
-        self.assertEqual(db_article.closed_at, article.closed_at)
-        self.assertEqual(db_article.url, article.url)
+        self.assertEqual(db_article.title, article.title)
+        self.assertEqual(db_article.description, article.description)
