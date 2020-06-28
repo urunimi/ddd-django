@@ -1,9 +1,11 @@
+import json
 from typing import Any, Dict, List, Tuple
 
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from article import repo
 from article.repo import ArticleRepo
 from domain import article
 
@@ -28,11 +30,11 @@ class ArticlesView(APIView):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._use_case = article.UseCase(ArticleRepo())
+        self._use_case = article.UseCase(repo.ArticleRepo())
         self._mapper = _Mapper()
 
     def post(self, request):
-        data = request.parsed_post["json"]
+        data = json.loads(request.POST["json"])
 
         article_id = self._use_case.insert_or_update_article(article.ArticleInput(
             title=data["title"],
@@ -47,8 +49,8 @@ class ArticlesView(APIView):
     def get(self, request):
         articles, cursor = self._get_by_cursor(request, cursor=request.query_params.get(
             "cursor"), limit=request.query_params.get("limit"))
-        return Response(status=status.HTTP_201_CREATED, data={
-            "nextCursor": cursor,
+        return Response(status=status.HTTP_200_OK, data={
+            "cursor": cursor,
             "items": [self._mapper._article_to_dto(article) for article in articles],
         })
 
@@ -66,7 +68,7 @@ class ArticlesView(APIView):
 class ArticleView(APIView):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._use_case = article.UseCase(ArticleRepo())
+        self._use_case = article.UseCase(repo.ArticleRepo())
         self._mapper = _Mapper()
 
     def get(self, request, id):
@@ -77,7 +79,7 @@ class ArticleView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND, data=f"article({id}) is not found")
 
     def patch(self, request, id):
-        data = request.parsed_post["json"]
+        data = json.loads(request.POST["json"])
         try:
             _ = self._use_case.insert_or_update_article(article.ArticleInput(
                 id=int(id),

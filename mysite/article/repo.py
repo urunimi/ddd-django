@@ -61,6 +61,8 @@ class ArticleRepo(article.Repo):
         if last_id:
             last_article = models.Article.objects.get(pk=last_id)
             qs = qs.filter(id_gt=last_article.id)
+        else:
+            qs = qs.all()
 
         result = qs[:limit]
         articles = [self._mapper.to_article_entity(m) for m in result]

@@ -9,6 +9,7 @@ from rest_framework.test import APITestCase
 
 from domain.article.tests.factories import ArticleFactory
 from domain.article.value_objects import ArticleInput, QueryOption
+import json
 
 
 @patch("article.repo.ArticleRepo")
@@ -21,14 +22,14 @@ class TestArticleView(APITestCase):
 
     def test_get(self, _):
         bann = ArticleFactory.create()
-        with patch("services.article.rest.article.UseCase") as uc_class:
+        with patch("article.views.article.UseCase") as uc_class:
             use_case = uc_class.return_value
             use_case.get_article.return_value = bann
 
             res = self.client.get(resolve_url("article", id=bann.id))
 
             self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
-            res_article = res.data["data"]
+            res_article = res.data
             self.assertEqual(res_article["id"], bann.id)
             self.assertEqual(res_article["title"], bann.title)
             self.assertEqual(res_article["description"], bann.description)
@@ -46,11 +47,11 @@ class TestArticleView(APITestCase):
         kwargs = {
             "image": SimpleUploadedFile("image.png", b"content", "image/png"),
         }
-        with patch("article.rest.article.UseCase") as uc_class:
+        with patch("article.views.article.UseCase") as uc_class:
             use_case = uc_class.return_value
             use_case.insert_or_update_article.return_value = article.id
 
-            kwargs["json"] = data
+            kwargs["json"] = json.dumps(data)
 
             res = self.client.patch(resolve_url("article", id=article.id), data=kwargs, format='multipart')
 
@@ -63,7 +64,7 @@ class TestArticleView(APITestCase):
             ))
 
 
-@patch("services.article.repo.ArticleRepo")
+@patch("article.repo.ArticleRepo")
 class TestArticlesView(APITestCase):
     def setUp(self):
         super().setUp()
@@ -81,13 +82,13 @@ class TestArticlesView(APITestCase):
         kwargs = {
             "image": SimpleUploadedFile("image.png", b"content", "image/png"),
         }
-        with patch("services.article.rest.article.UseCase") as uc_class:
+        with patch("article.views.article.UseCase") as uc_class:
             use_case = uc_class.return_value
             use_case.insert_or_update_article.return_value = article.id
             use_case.get_article.return_value = article
-            kwargs["json"] = data
+            kwargs["json"] = json.dumps(data)
 
-            res = self.client.patch(resolve_url("articles", id=article.id), data=kwargs, format='multipart')
+            res = self.client.post(resolve_url("articles"), data=kwargs, format='multipart')
 
             self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
             use_case.insert_or_update_article.assert_called_once_with(ArticleInput(
@@ -98,16 +99,16 @@ class TestArticlesView(APITestCase):
 
     def test_get_by_cursor(self, _):
         articles = ArticleFactory.create_batch(4)
-        cursor, next_cursor = "cursor", "nextCursor"
+        cursor, next_cursor = "cursor", "next_cursor"
 
-        with patch("services.article.rest.article.UseCase") as uc_class:
+        with patch("article.views.article.UseCase") as uc_class:
             use_case = uc_class.return_value
-            use_case.get_articles_by_cursor.return_value = (articles, next_cursor)
+            use_case.get_articles.return_value = (articles, next_cursor)
 
             res = self.client.get(self.url, data={"cursor": cursor})
 
             self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
-            use_case.get_articles_by_cursor.assert_called_once_with(QueryOption(
+            use_case.get_articles.assert_called_once_with(QueryOption(
                 cursor=cursor,
                 limit=ANY,
             ))
